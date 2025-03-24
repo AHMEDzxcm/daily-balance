@@ -11,17 +11,26 @@
     }
     
     /* Tab content transitions */
+    .tab-container {
+      position: relative;
+      min-height: 400px; /* Adjust based on your content */
+      overflow: hidden;
+    }
+    
     .tab-content {
-      display: none;
+      position: absolute;
+      width: 100%;
       opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+      pointer-events: none;
+      transform: translateX(20px);
+      transition: transform 0.4s ease-out, opacity 0.4s ease-out;
     }
     
     .tab-content.active {
-      display: block;
       opacity: 1;
-      transform: translateY(0);
+      pointer-events: auto;
+      transform: translateX(0);
+      position: relative;
     }
     
     /* Dark mode styles */
@@ -80,6 +89,19 @@
       top: 20px;
       right: 20px;
       z-index: 10;
+    }
+    
+    /* Responsive adjustments for mobile */
+    @media (max-width: 640px) {
+      .theme-switch-wrapper {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+      }
+      
+      header {
+        padding-top: 40px; /* Make room for the switch */
+      }
     }
     
     .theme-switch {
@@ -226,6 +248,11 @@
       to { transform: translateX(0); opacity: 1; }
     }
     
+    @keyframes slideInLeft {
+      from { transform: translateX(-30px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
     @keyframes pulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.05); }
@@ -361,6 +388,34 @@
     .page-transition {
       animation: fadeIn 0.5s ease-out forwards;
     }
+    
+    /* Slide animations for tab content */
+    .slide-left {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    
+    .slide-right {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    
+    .slide-center {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    
+    /* Prevent content jump during transitions */
+    .content-wrapper {
+      min-height: 500px; /* Adjust based on your content */
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+      .content-wrapper {
+        min-height: 600px; /* Adjust for mobile */
+      }
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-800 p-4 page-transition">
@@ -378,7 +433,7 @@
     <span class="switch-label">Dark Mode</span>
   </div>
 
-  <header class="text-center mb-8">
+  <header class="text-center mb-8 pt-10">
     <h1 class="text-3xl font-bold mb-2 text-gray-900">Daily Balance</h1>
     <p class="text-gray-600">Track your daily highs and lows</p>
   </header>
@@ -386,128 +441,131 @@
   <div class="max-w-md mx-auto bg-white rounded-lg overflow-hidden shadow-md">
     <!-- Navigation Tabs -->
     <div class="flex border-b border-gray-100">
-      <button id="tab-daily" class="tab-btn flex-1 py-3 text-green-600 border-b-2 border-green-600 font-medium active">
+      <button id="tab-daily" class="tab-btn flex-1 py-3 text-green-600 border-b-2 border-green-600 font-medium active" data-tab="daily">
         Daily Log
       </button>
-      <button id="tab-achievements" class="tab-btn flex-1 py-3 text-gray-500">
+      <button id="tab-achievements" class="tab-btn flex-1 py-3 text-gray-500" data-tab="achievements">
         Achievements
       </button>
-      <button id="tab-weekly" class="tab-btn flex-1 py-3 text-gray-500">
+      <button id="tab-weekly" class="tab-btn flex-1 py-3 text-gray-500" data-tab="weekly">
         Weekly Review
       </button>
     </div>
     
-    <!-- Daily Log Tab -->
-    <div id="content-daily" class="tab-content p-4 text-gray-800 active">
-      <div class="mb-6 bg-gray-50 p-4 rounded-lg">
-        <h2 class="text-xl font-semibold mb-3 text-gray-800">Today's Balance</h2>
-        
-        <div class="mb-4">
-          <label class="block mb-2 text-gray-600">
-            <div class="flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-5 w-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-              Something Good
+    <!-- Tab Content Container -->
+    <div class="tab-container content-wrapper">
+      <!-- Daily Log Tab -->
+      <div id="content-daily" class="tab-content p-4 text-gray-800 active">
+        <div class="mb-6 bg-gray-50 p-4 rounded-lg">
+          <h2 class="text-xl font-semibold mb-3 text-gray-800">Today's Balance</h2>
+          
+          <div class="mb-4">
+            <label class="block mb-2 text-gray-600">
+              <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-5 w-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                Something Good
+              </div>
+            </label>
+            <textarea 
+              id="good-entry"
+              class="w-full p-3 rounded bg-white text-gray-800 placeholder-gray-400 border border-gray-200 focus:border-green-500 focus:outline-none"
+              placeholder="What went well today?"
+              rows="2"
+            ></textarea>
+          </div>
+          
+          <div class="mb-4">
+            <label class="block mb-2 text-gray-600">
+              <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-5 w-5 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>
+                Something Challenging
+              </div>
+            </label>
+            <textarea 
+              id="challenge-entry"
+              class="w-full p-3 rounded bg-white text-gray-800 placeholder-gray-400 border border-gray-200 focus:border-red-500 focus:outline-none"
+              placeholder="What was difficult today?"
+              rows="2"
+            ></textarea>
+          </div>
+          
+          <div class="mb-4">
+            <label class="block mb-2 text-gray-600">Categories</label>
+            <div class="flex flex-wrap gap-2" id="category-container">
+              <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Work">Work</span>
+              <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Health">Health</span>
+              <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Social">Social</span>
+              <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Family">Family</span>
+              <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Learning">Learning</span>
+              <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Transit">Transit</span>
             </div>
-          </label>
-          <textarea 
-            id="good-entry"
-            class="w-full p-3 rounded bg-white text-gray-800 placeholder-gray-400 border border-gray-200 focus:border-green-500 focus:outline-none"
-            placeholder="What went well today?"
-            rows="2"
-          ></textarea>
+          </div>
+          
+          <button id="save-entry" class="btn-animated w-full p-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium text-white flex items-center justify-center">
+            <div class="spinner" id="save-spinner"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+            <span id="save-button-text">Log Today's Balance</span>
+          </button>
         </div>
         
-        <div class="mb-4">
-          <label class="block mb-2 text-gray-600">
-            <div class="flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-5 w-5 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>
-              Something Challenging
-            </div>
-          </label>
-          <textarea 
-            id="challenge-entry"
-            class="w-full p-3 rounded bg-white text-gray-800 placeholder-gray-400 border border-gray-200 focus:border-red-500 focus:outline-none"
-            placeholder="What was difficult today?"
-            rows="2"
-          ></textarea>
+        <h2 class="text-xl font-semibold mb-3 text-gray-800">Recent Entries</h2>
+        
+        <div id="entries-container" class="space-y-4">
+          <!-- Entries will be dynamically added here -->
+        </div>
+      </div>
+      
+      <!-- Achievements Tab -->
+      <div id="content-achievements" class="tab-content p-4 text-gray-800">
+        <div class="text-center mb-6">
+          <div class="inline-block p-3 bg-green-500 rounded-full mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-800">Your Positive Moments</h2>
+          <p class="text-gray-600">All the good things you've experienced</p>
         </div>
         
-        <div class="mb-4">
-          <label class="block mb-2 text-gray-600">Categories</label>
-          <div class="flex flex-wrap gap-2" id="category-container">
-            <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Work">Work</span>
-            <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Health">Health</span>
-            <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Social">Social</span>
-            <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Family">Family</span>
-            <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Learning">Learning</span>
-            <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Transit">Transit</span>
+        <div id="achievements-container" class="space-y-4">
+          <!-- Achievements will be dynamically added here -->
+        </div>
+        
+        <div class="mt-6 text-center">
+          <button id="view-all-achievements" class="btn-animated px-4 py-2 bg-green-500 hover:bg-green-600 rounded-full text-sm flex items-center mx-auto text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            View All Positive Moments
+          </button>
+        </div>
+      </div>
+      
+      <!-- Weekly Review Tab -->
+      <div id="content-weekly" class="tab-content p-4 text-gray-800">
+        <div class="text-center mb-6">
+          <div class="inline-block p-4 bg-green-500 rounded-full mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-800">Weekly Highlights</h2>
+          <p id="weekly-summary" class="text-gray-600">You logged 0 positive moments this week!</p>
+        </div>
+        
+        <div class="bg-white border border-gray-100 p-4 rounded-lg shadow-sm mb-6">
+          <h3 class="font-semibold mb-3 text-gray-800">Positive Category Breakdown</h3>
+          <div id="category-breakdown" class="space-y-2">
+            <!-- Category breakdown will be dynamically added here -->
           </div>
         </div>
         
-        <button id="save-entry" class="btn-animated w-full p-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium text-white flex items-center justify-center">
-          <div class="spinner" id="save-spinner"></div>
-          <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-          <span id="save-button-text">Log Today's Balance</span>
-        </button>
-      </div>
-      
-      <h2 class="text-xl font-semibold mb-3 text-gray-800">Recent Entries</h2>
-      
-      <div id="entries-container" class="space-y-4">
-        <!-- Entries will be dynamically added here -->
-      </div>
-    </div>
-    
-    <!-- Achievements Tab -->
-    <div id="content-achievements" class="tab-content p-4 text-gray-800">
-      <div class="text-center mb-6">
-        <div class="inline-block p-3 bg-green-500 rounded-full mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        <div class="bg-white border border-gray-100 p-4 rounded-lg shadow-sm mb-6">
+          <h3 class="font-semibold mb-3 text-gray-800">Achievements Unlocked</h3>
+          <div id="achievements-unlocked" class="space-y-3">
+            <!-- Achievements will be dynamically added here -->
+          </div>
         </div>
-        <h2 class="text-2xl font-bold text-gray-800">Your Positive Moments</h2>
-        <p class="text-gray-600">All the good things you've experienced</p>
-      </div>
-      
-      <div id="achievements-container" class="space-y-4">
-        <!-- Achievements will be dynamically added here -->
-      </div>
-      
-      <div class="mt-6 text-center">
-        <button id="view-all-achievements" class="btn-animated px-4 py-2 bg-green-500 hover:bg-green-600 rounded-full text-sm flex items-center mx-auto text-white">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-          View All Positive Moments
-        </button>
-      </div>
-    </div>
-    
-    <!-- Weekly Review Tab -->
-    <div id="content-weekly" class="tab-content p-4 text-gray-800">
-      <div class="text-center mb-6">
-        <div class="inline-block p-4 bg-green-500 rounded-full mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
-        </div>
-        <h2 class="text-2xl font-bold text-gray-800">Weekly Highlights</h2>
-        <p id="weekly-summary" class="text-gray-600">You logged 0 positive moments this week!</p>
-      </div>
-      
-      <div class="bg-white border border-gray-100 p-4 rounded-lg shadow-sm mb-6">
-        <h3 class="font-semibold mb-3 text-gray-800">Positive Category Breakdown</h3>
-        <div id="category-breakdown" class="space-y-2">
-          <!-- Category breakdown will be dynamically added here -->
-        </div>
-      </div>
-      
-      <div class="bg-white border border-gray-100 p-4 rounded-lg shadow-sm mb-6">
-        <h3 class="font-semibold mb-3 text-gray-800">Achievements Unlocked</h3>
-        <div id="achievements-unlocked" class="space-y-3">
-          <!-- Achievements will be dynamically added here -->
-        </div>
-      </div>
-      
-      <div class="bg-white border border-gray-100 p-4 rounded-lg shadow-sm">
-        <h3 class="font-semibold mb-3 text-gray-800">Challenges & Insights</h3>
-        <div id="challenges-insights" class="space-y-3">
-          <!-- Challenges and insights will be dynamically added here -->
+        
+        <div class="bg-white border border-gray-100 p-4 rounded-lg shadow-sm">
+          <h3 class="font-semibold mb-3 text-gray-800">Challenges & Insights</h3>
+          <div id="challenges-insights" class="space-y-3">
+            <!-- Challenges and insights will be dynamically added here -->
+          </div>
         </div>
       </div>
     </div>
@@ -519,6 +577,7 @@
       entries: [],
       selectedCategories: [],
       isSaving: false,
+      currentTab: 'daily',
       
       init() {
         // Load data from localStorage
@@ -637,37 +696,102 @@
         const tabButtons = document.querySelectorAll('.tab-btn');
         const tabContents = document.querySelectorAll('.tab-content');
         
+        // Set initial state
+        this.updateTabContent(this.currentTab, null);
+        
         tabButtons.forEach(button => {
           button.addEventListener('click', () => {
-            // Remove active class from all buttons
+            const newTab = button.getAttribute('data-tab');
+            const oldTab = this.currentTab;
+            
+            if (newTab === oldTab) return;
+            
+            // Update active tab button styles
             tabButtons.forEach(btn => {
               btn.classList.remove('text-green-600', 'border-b-2', 'border-green-600', 'font-medium', 'active');
               btn.classList.add('text-gray-500');
             });
             
-            // Add active class to clicked button
             button.classList.add('text-green-600', 'border-b-2', 'border-green-600', 'font-medium', 'active');
             button.classList.remove('text-gray-500');
             
-            // Hide all tab contents
-            tabContents.forEach(content => {
-              content.classList.remove('active');
-            });
+            // Handle tab content transition
+            this.updateTabContent(newTab, oldTab);
             
-            // Show the corresponding tab content with a slight delay for smooth transition
-            const tabId = button.id.replace('tab-', 'content-');
-            setTimeout(() => {
-              document.getElementById(tabId).classList.add('active');
-              
-              // Apply staggered animations to items in the newly active tab
-              if (tabId === 'content-achievements') {
-                this.animateAchievements();
-              } else if (tabId === 'content-weekly') {
-                this.animateWeeklyItems();
-              }
-            }, 50);
+            // Update current tab
+            this.currentTab = newTab;
           });
         });
+      },
+      
+      // Update tab content with smooth transitions
+      updateTabContent(newTab, oldTab) {
+        const tabContents = document.querySelectorAll('.tab-content');
+        const newContent = document.getElementById(`content-${newTab}`);
+        
+        if (oldTab === null) {
+          // Initial load - just show the active tab
+          tabContents.forEach(content => {
+            if (content.id === `content-${newTab}`) {
+              content.classList.add('active');
+            } else {
+              content.classList.remove('active');
+            }
+          });
+          return;
+        }
+        
+        // Determine animation direction
+        const tabs = ['daily', 'achievements', 'weekly'];
+        const oldIndex = tabs.indexOf(oldTab);
+        const newIndex = tabs.indexOf(newTab);
+        const direction = newIndex > oldIndex ? 'right' : 'left';
+        
+        // Get old and new content elements
+        const oldContent = document.getElementById(`content-${oldTab}`);
+        
+        // Set initial positions
+        oldContent.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out';
+        newContent.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out';
+        
+        if (direction === 'right') {
+          // Old content slides left, new content slides in from right
+          oldContent.style.transform = 'translateX(-30px)';
+          oldContent.style.opacity = '0';
+          
+          // Position new content
+          newContent.style.transform = 'translateX(30px)';
+          newContent.style.opacity = '0';
+        } else {
+          // Old content slides right, new content slides in from left
+          oldContent.style.transform = 'translateX(30px)';
+          oldContent.style.opacity = '0';
+          
+          // Position new content
+          newContent.style.transform = 'translateX(-30px)';
+          newContent.style.opacity = '0';
+        }
+        
+        // Make new content visible but not active yet
+        newContent.classList.add('active');
+        
+        // Trigger animation after a small delay
+        setTimeout(() => {
+          newContent.style.transform = 'translateX(0)';
+          newContent.style.opacity = '1';
+          
+          // Apply staggered animations to items in the newly active tab
+          if (newTab === 'achievements') {
+            this.animateAchievements();
+          } else if (newTab === 'weekly') {
+            this.animateWeeklyItems();
+          }
+          
+          // Remove active class from old content after animation completes
+          setTimeout(() => {
+            oldContent.classList.remove('active');
+          }, 400);
+        }, 50);
       },
       
       // Initialize category tag selection with enhanced animations
