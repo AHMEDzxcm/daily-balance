@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Balance App</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    /* Tab content transitions */
+    .tab-content {
+      display: none;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+    }
+    
+    .tab-content.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* Dark mode styles */
+    .dark {
+      --bg-primary: #1a202c;
+      --bg-secondary: #2d3748;
+      --bg-tertiary: #4a5568;
+      --text-primary: #f7fafc;
+      --text-secondary: #e2e8f0;
+      --text-tertiary: #a0aec0;
+      --border-color: #4a5568;
+    }
+    
+    .dark body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    
+    .dark .bg-white {
+      background-color: var(--bg-secondary);
+    }
+    
+    .dark .bg-gray-50 {
+      background-color: var(--bg-tertiary);
+    }
+    
+    .dark .text-gray-900 {
+      color: var(--text-primary);
+    }
+    
+    .dark .text-gray-800 {
+      color: var(--text-primary);
+    }
+    
+    .dark .text-gray-700 {
+      color: var(--text-secondary);
+    }
+    
+    .dark .text-gray-600 {
+      color: var(--text-tertiary);
+    }
+    
+    .dark .border-gray-100 {
+      border-color: var(--border-color);
+    }
+    
+    .dark .shadow-sm, .dark .shadow-md {
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Toggle switch styles */
+    .theme-switch-wrapper {
+      display: flex;
+      align-items: center;
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 10;
+    }
+    
+    .theme-switch {
+      display: inline-block;
+      height: 24px;
+      position: relative;
+      width: 48px;
+    }
+    
+    .theme-switch input {
+      display: none;
+    }
+    
+    .slider {
+      background-color: #ccc;
+      bottom: 0;
+      cursor: pointer;
+      left: 0;
+      position: absolute;
+      right: 0;
+      top: 0;
+      transition: .4s;
+      border-radius: 24px;
+    }
+    
+    .slider:before {
+      background-color: white;
+      bottom: 4px;
+      content: "";
+      height: 16px;
+      left: 4px;
+      position: absolute;
+      transition: .4s;
+      width: 16px;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: #10B981;
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+    
+    .theme-switch-wrapper .switch-label {
+      margin-left: 8px;
+      font-size: 14px;
+    }
+    
+    /* Dark mode specific element styles */
+    .dark .bg-green-50 {
+      background-color: rgba(16, 185, 129, 0.2);
+    }
+    
+    .dark .bg-red-50 {
+      background-color: rgba(239, 68, 68, 0.2);
+    }
+    
+    .dark textarea {
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      border-color: var(--border-color);
+    }
+    
+    .dark textarea::placeholder {
+      color: var(--text-tertiary);
+    }
+    
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: top 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    }
+    
+    .toast.success {
+      background-color: #10B981;
+    }
+    
+    .toast.error {
+      background-color: #EF4444;
+    }
+    
+    .toast.show {
+      top: 20px;
+    }
+    
+    /* Category tags */
+    .category-tag {
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .category-tag:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(16, 185, 129, 0.2);
+      border-radius: 9999px;
+      transform: scale(0);
+      transition: transform 0.3s ease;
+    }
+    
+    .category-tag:hover {
+      transform: translateY(-2px);
+    }
+    
+    .category-tag.selected {
+      transform: scale(1.05);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .category-tag.selected:before {
+      transform: scale(1);
+    }
+    
+    /* Animation for new entries */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes scaleIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    
+    @keyframes slideInRight {
+      from { transform: translateX(30px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    .new-entry {
+      animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    
+    .achievement-item {
+      animation: scaleIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    
+    .category-item {
+      animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation-fill-mode: both;
+    }
+    
+    .save-success {
+      animation: pulse 0.6s ease-in-out;
+    }
+    
+    /* Tab button animations */
+    .tab-btn {
+      position: relative;
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+    
+    .tab-btn:after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background: #10B981;
+      transition: all 0.3s ease;
+    }
+    
+    .tab-btn:hover:after {
+      width: 100%;
+      left: 0;
+    }
+    
+    .tab-btn.active:after {
+      width: 100%;
+      left: 0;
+    }
+    
+    /* Form animations */
+    textarea {
+      transition: all 0.3s ease;
+    }
+    
+    textarea:focus {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Button animations */
+    .btn-animated {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-animated:before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.6s ease, height 0.6s ease;
+    }
+    
+    .btn-animated:hover:before {
+      width: 300px;
+      height: 300px;
+    }
+    
+    .btn-animated:active {
+      transform: scale(0.95);
+    }
+    
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .spinner.show {
+      opacity: 1;
+    }
+    
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #9CA3AF;
+      animation: fadeIn 0.8s ease-out forwards;
+    }
+    
+    .empty-state svg {
+      margin: 0 auto 16px;
+      display: block;
+    }
+    
+    /* Staggered animations for lists */
+    .staggered-item {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    
+    /* Page transition */
+    .page-transition {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 p-4 page-transition">
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">
+    <span id="toast-message">Entry saved successfully!</span>
+  </div>
+
+  <!-- Dark Mode Toggle Switch -->
+  <div class="theme-switch-wrapper">
+    <label class="theme-switch" for="checkbox">
+      <input type="checkbox" id="checkbox" />
+      <div class="slider"></div>
+    </label>
+    <span class="switch-label">Dark Mode</span>
+  </div>
+
+  <header class="text-center mb-8">
+    <h1 class="text-3xl font-bold mb-2 text-gray-900">Daily Balance</h1>
+    <p class="text-gray-600">Track your daily highs and lows</p>
+  </header>
+  
+  <div class="max-w-md mx-auto bg-white rounded-lg overflow-hidden shadow-md">
+    <!-- Navigation Tabs -->
+    <div class="flex border-b border-gray-100">
+      <button id="tab-daily" class="tab-btn flex-1 py-3 text-green-600 border-b-2 border-green-600 font-medium active">
+        Daily Log
+      </button>
+      <button id="tab-achievements" class="tab-btn flex-1 py-3 text-gray-500">
+        Achievements
+      </button>
+      <button id="tab-weekly" class="tab-btn flex-1 py-3 text-gray-500">
+        Weekly Review
+      </button>
+    </div>
+    
+    <!-- Daily Log Tab -->
+    <div id="content-daily" class="tab-content p-4 text-gray-800 active">
+      <div class="mb-6 bg-gray-50 p-4 rounded-lg">
+        <h2 class="text-xl font-semibold mb-3 text-gray-800">Today's Balance</h2>
+        
+        <div class="mb-4">
+          <label class="block mb-2 text-gray-600">
+            <div class="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-5 w-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+              Something Good
+            </div>
+          </label>
+          <textarea 
+            id="good-entry"
+            class="w-full p-3 rounded bg-white text-gray-800 placeholder-gray-400 border border-gray-200 focus:border-green-500 focus:outline-none"
+            placeholder="What went well today?"
+            rows="2"
+          ></textarea>
+        </div>
+        
+        <div class="mb-4">
+          <label class="block mb-2 text-gray-600">
+            <div class="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-5 w-5 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>
+              Something Challenging
+            </div>
+          </label>
+          <textarea 
+            id="challenge-entry"
+            class="w-full p-3 rounded bg-white text-gray-800 placeholder-gray-400 border border-gray-200 focus:border-red-500 focus:outline-none"
+            placeholder="What was difficult today?"
+            rows="2"
+          ></textarea>
+        </div>
+        
+        <div class="mb-4">
+          <label class="block mb-2 text-gray-600">Categories</label>
+          <div class="flex flex-wrap gap-2" id="category-container">
+            <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Work">Work</span>
+            <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Health">Health</span>
+            <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Social">Social</span>
+            <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Family">Family</span>
+            <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Learning">Learning</span>
+            <span class="category-tag px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs" data-category="Transit">Transit</span>
+          </div>
+        </div>
+        
+        <button id="save-entry" class="btn-animated w-full p-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium text-white flex items-center justify-center">
+          <div class="spinner" id="save-spinner"></div>
+          <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+          <span id="save-button-text">Log Today's Balance</span>
+        </button>
+      </div>
+      
+      <h2 class="text-xl font-semibold mb-3 text-gray-800">Recent Entries</h2>
+      
+      <div id="entries-container" class="space-y-4">
+        <!-- Entries will be dynamically added here -->
+      </div>
+    </div>
+    
+    <!-- Achievements Tab -->
+    <div id="content-achievements" class="tab-content p-4 text-gray-800">
+      <div class="text-center mb-6">
+        <div class="inline-block p-3 bg-green-500 rounded-full mb-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800">Your Positive Moments</h2>
+        <p class="text-gray-600">All the good things you've experienced</p>
+      </div>
+      
+      <div id="achievements-container" class="space-y-4">
+        <!-- Achievements will be dynamically added here -->
+      </div>
+      
+      <div class="mt-6 text-center">
+        <button id="view-all-achievements" class="btn-animated px-4 py-2 bg-green-500 hover:bg-green-600 rounded-full text-sm flex items-center mx-auto text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          View All Positive Moments
+        </button>
+      </div>
+    </div>
+    
+    <!-- Weekly Review Tab -->
+    <div id="content-weekly" class="tab-content p-4 text-gray-800">
+      <div class="text-center mb-6">
+        <div class="inline-block p-4 bg-green-500 rounded-full mb-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800">Weekly Highlights</h2>
+        <p id="weekly-summary" class="text-gray-600">You logged 0 positive moments this week!</p>
+      </div>
+      
+      <div class="bg-white border border-gray-100 p-4 rounded-lg shadow-sm mb-6">
+        <h3 class="font-semibold mb-3 text-gray-800">Positive Category Breakdown</h3>
+        <div id="category-breakdown" class="space-y-2">
+          <!-- Category breakdown will be dynamically added here -->
+        </div>
+      </div>
+      
+      <div class="bg-white border border-gray-100 p-4 rounded-lg shadow-sm mb-6">
+        <h3 class="font-semibold mb-3 text-gray-800">Achievements Unlocked</h3>
+        <div id="achievements-unlocked" class="space-y-3">
+          <!-- Achievements will be dynamically added here -->
+        </div>
+      </div>
+      
+      <div class="bg-white border border-gray-100 p-4 rounded-lg shadow-sm">
+        <h3 class="font-semibold mb-3 text-gray-800">Challenges & Insights</h3>
+        <div id="challenges-insights" class="space-y-3">
+          <!-- Challenges and insights will be dynamically added here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Data storage and management
+    const DailyBalanceApp = {
+      entries: [],
+      selectedCategories: [],
+      isSaving: false,
+      
+      init() {
+        // Load data from localStorage
+        this.loadEntries();
+        
+        // Initialize UI
+        this.initTabs();
+        this.initCategoryTags();
+        this.initSaveButton();
+        this.renderEntries();
+        this.renderAchievements();
+        this.updateWeeklySummary();
+        
+        // Initialize dark mode
+        this.initDarkMode();
+        
+        // Apply staggered animations to category tags
+        this.animateCategoryTags();
+      },
+      
+      // Load entries from localStorage
+      loadEntries() {
+        try {
+          const savedEntries = localStorage.getItem('dailyBalanceEntries');
+          if (savedEntries) {
+            this.entries = JSON.parse(savedEntries);
+          } else {
+            // Add sample entries if no entries exist
+            this.entries = [
+              {
+                id: 1,
+                date: new Date('2025-03-23').toISOString(),
+                day: 'Monday',
+                categories: ['Social', 'Health'],
+                goodEntry: 'Had a great lunch with my old friend Sarah',
+                challengeEntry: 'Missed my morning workout'
+              },
+              {
+                id: 2,
+                date: new Date('2025-03-24').toISOString(),
+                day: 'Tuesday',
+                categories: ['Work', 'Transit'],
+                goodEntry: 'Finished a difficult work project ahead of schedule',
+                challengeEntry: 'Got stuck in traffic for an hour'
+              }
+            ];
+            this.saveEntries();
+          }
+        } catch (error) {
+          console.error('Error loading entries:', error);
+          this.showToast('Error loading your entries. Please try refreshing the page.', 'error');
+          this.entries = [];
+        }
+      },
+      
+      // Save entries to localStorage with error handling
+      saveEntries() {
+        try {
+          localStorage.setItem('dailyBalanceEntries', JSON.stringify(this.entries));
+          return true;
+        } catch (error) {
+          console.error('Error saving entries:', error);
+          this.showToast('Error saving your entry. Please try again.', 'error');
+          return false;
+        }
+      },
+      
+      // Add a new entry with improved error handling and animations
+      addEntry(goodEntry, challengeEntry, categories) {
+        try {
+          const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          const today = new Date();
+          const day = days[today.getDay()];
+          
+          const newEntry = {
+            id: Date.now(),
+            date: today.toISOString(),
+            day,
+            categories,
+            goodEntry,
+            challengeEntry
+          };
+          
+          this.entries.unshift(newEntry); // Add to beginning of array
+          const saveSuccess = this.saveEntries();
+          
+          if (saveSuccess) {
+            this.renderEntries();
+            this.renderAchievements();
+            this.updateWeeklySummary();
+            return newEntry;
+          } else {
+            return null;
+          }
+        } catch (error) {
+          console.error('Error adding entry:', error);
+          this.showToast('Error adding your entry. Please try again.', 'error');
+          return null;
+        }
+      },
+      
+      // Get entries for the current week
+      getWeekEntries() {
+        const today = new Date();
+        const oneWeekAgo = new Date(today);
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        
+        return this.entries.filter(entry => {
+          const entryDate = new Date(entry.date);
+          return entryDate >= oneWeekAgo && entryDate <= today;
+        });
+      },
+      
+      // Initialize tab functionality with smooth transitions
+      initTabs() {
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabButtons.forEach(button => {
+          button.addEventListener('click', () => {
+            // Remove active class from all buttons
+            tabButtons.forEach(btn => {
+              btn.classList.remove('text-green-600', 'border-b-2', 'border-green-600', 'font-medium', 'active');
+              btn.classList.add('text-gray-500');
+            });
+            
+            // Add active class to clicked button
+            button.classList.add('text-green-600', 'border-b-2', 'border-green-600', 'font-medium', 'active');
+            button.classList.remove('text-gray-500');
+            
+            // Hide all tab contents
+            tabContents.forEach(content => {
+              content.classList.remove('active');
+            });
+            
+            // Show the corresponding tab content with a slight delay for smooth transition
+            const tabId = button.id.replace('tab-', 'content-');
+            setTimeout(() => {
+              document.getElementById(tabId).classList.add('active');
+              
+              // Apply staggered animations to items in the newly active tab
+              if (tabId === 'content-achievements') {
+                this.animateAchievements();
+              } else if (tabId === 'content-weekly') {
+                this.animateWeeklyItems();
+              }
+            }, 50);
+          });
+        });
+      },
+      
+      // Initialize category tag selection with enhanced animations
+      initCategoryTags() {
+        const categoryTags = document.querySelectorAll('.category-tag');
+        
+        categoryTags.forEach(tag => {
+          tag.addEventListener('click', () => {
+            tag.classList.toggle('selected');
+            const category = tag.dataset.category;
+            
+            if (tag.classList.contains('selected')) {
+              this.selectedCategories.push(category);
+            } else {
+              this.selectedCategories = this.selectedCategories.filter(c => c !== category);
+            }
+          });
+        });
+      },
+      
+      // Apply staggered animations to category tags
+      animateCategoryTags() {
+        const categoryTags = document.querySelectorAll('.category-tag');
+        categoryTags.forEach((tag, index) => {
+          tag.classList.add('category-item');
+          tag.style.animationDelay = `${index * 0.1}s`;
+        });
+      },
+      
+      // Apply staggered animations to achievements
+      animateAchievements() {
+        const items = document.querySelectorAll('#achievements-container > div');
+        items.forEach((item, index) => {
+          item.classList.add('achievement-item');
+          item.style.animationDelay = `${index * 0.1}s`;
+        });
+      },
+      
+      // Apply staggered animations to weekly tab items
+      animateWeeklyItems() {
+        const sections = [
+          ...document.querySelectorAll('#category-breakdown > div'),
+          ...document.querySelectorAll('#achievements-unlocked > div'),
+          ...document.querySelectorAll('#challenges-insights > div')
+        ];
+        
+        sections.forEach((item, index) => {
+          item.classList.add('staggered-item');
+          item.style.opacity = '0';
+          item.style.transform = 'translateY(10px)';
+          
+          setTimeout(() => {
+            item.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            item.style.opacity = '1';
+            item.style.transform = 'translateY(0)';
+          }, 100 + (index * 100));
+        });
+      },
+      
+      // Initialize save button functionality with improved feedback
+      initSaveButton() {
+        const saveButton = document.getElementById('save-entry');
+        const goodEntryField = document.getElementById('good-entry');
+        const challengeEntryField = document.getElementById('challenge-entry');
+        const saveSpinner = document.getElementById('save-spinner');
+        const saveButtonText = document.getElementById('save-button-text');
+        
+        saveButton.addEventListener('click', () => {
+          if (this.isSaving) return; // Prevent multiple clicks
+          
+          const goodEntry = goodEntryField.value.trim();
+          const challengeEntry = challengeEntryField.value.trim();
+          
+          if (!goodEntry && !challengeEntry) {
+            this.showToast('Please enter at least one reflection', 'error');
+            this.shakeElement(saveButton);
+            return;
+          }
+          
+          // Show saving state
+          this.isSaving = true;
+          saveSpinner.classList.add('show');
+          saveButtonText.textContent = 'Saving...';
+          saveButton.classList.add('opacity-90');
+          
+          // Simulate network delay for better user experience
+          setTimeout(() => {
+            // Add the new entry
+            const newEntry = this.addEntry(goodEntry, challengeEntry, [...this.selectedCategories]);
+            
+            if (newEntry) {
+              // Clear form
+              goodEntryField.value = '';
+              challengeEntryField.value = '';
+              this.selectedCategories = [];
+              
+              // Reset category tags
+              document.querySelectorAll('.category-tag').forEach(tag => {
+                tag.classList.remove('selected');
+              });
+              
+              // Show success message and animation
+              this.showToast('Entry saved successfully!', 'success');
+              saveButton.classList.add('save-success');
+              
+              // Reset button state
+              setTimeout(() => {
+                saveButton.classList.remove('save-success');
+              }, 600);
+            }
+            
+            // Reset saving state
+            this.isSaving = false;
+            saveSpinner.classList.remove('show');
+            saveButtonText.textContent = 'Log Today\'s Balance';
+            saveButton.classList.remove('opacity-90');
+          }, 800);
+        });
+      },
+      
+      // Shake element animation for validation errors
+      shakeElement(element) {
+        element.classList.add('animate-shake');
+        setTimeout(() => {
+          element.classList.remove('animate-shake');
+        }, 500);
+      },
+      
+      // Render entries in the Recent Entries section with enhanced animations
+      renderEntries() {
+        const entriesContainer = document.getElementById('entries-container');
+        entriesContainer.innerHTML = '';
+        
+        if (this.entries.length === 0) {
+          entriesContainer.innerHTML = `
+            <div class="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <p>No entries yet. Start logging your daily balance!</p>
+            </div>
+          `;
+          return;
+        }
+        
+        // Display the most recent entries (up to 5)
+        const recentEntries = this.entries.slice(0, 5);
+        
+        recentEntries.forEach((entry, index) => {
+          const entryElement = document.createElement('div');
+          entryElement.className = `bg-white border border-gray-100 p-4 rounded-lg shadow-sm ${index === 0 ? 'new-entry' : ''}`;
+          entryElement.style.animationDelay = `${index * 0.1}s`;
+          
+          let categoriesHTML = '';
+          if (entry.categories && entry.categories.length > 0) {
+            categoriesHTML = `
+              <div class="flex space-x-1">
+                ${entry.categories.map(category => 
+                  `<span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">${category}</span>`
+                ).join('')}
+              </div>
+            `;
+          }
+          
+          let goodEntryHTML = '';
+          if (entry.goodEntry) {
+            goodEntryHTML = `
+              <div class="flex items-start space-x-2 mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mt-1 text-green-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                <p class="text-sm text-gray-700">${entry.goodEntry}</p>
+              </div>
+            `;
+          }
+          
+          let challengeEntryHTML = '';
+          if (entry.challengeEntry) {
+            challengeEntryHTML = `
+              <div class="flex items-start space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mt-1 text-red-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="16" y1="16" x2="16.01" y2="16"></line><line x1="8" y1="16" x2="8.01" y2="16"></line><path d="M12 18v-0.01"></path><path d="M8 11a4 4 0 0 1 8 0"></path></svg>
+                <p class="text-sm text-gray-700">${entry.challengeEntry}</p>
+              </div>
+            `;
+          }
+          
+          entryElement.innerHTML = `
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="font-medium text-gray-800">${entry.day}</h3>
+              ${categoriesHTML}
+            </div>
+            ${goodEntryHTML}
+            ${challengeEntryHTML}
+          `;
+          
+          entriesContainer.appendChild(entryElement);
+        });
+      },
+      
+      // Render achievements in the Achievements tab with enhanced animations
+      renderAchievements() {
+        const achievementsContainer = document.getElementById('achievements-container');
+        achievementsContainer.innerHTML = '';
+        
+        // Filter entries with good entries
+        const goodEntries = this.entries.filter(entry => entry.goodEntry && entry.goodEntry.trim() !== '');
+        
+        if (goodEntries.length === 0) {
+          achievementsContainer.innerHTML = `
+            <div class="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              <p>No positive moments logged yet. Start recording your wins!</p>
+            </div>
+          `;
+          return;
+        }
+        
+        // Display the positive entries (up to 5)
+        const recentGoodEntries = goodEntries.slice(0, 5);
+        
+        recentGoodEntries.forEach((entry, index) => {
+          const entryDate = new Date(entry.date);
+          const formattedDate = entryDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+          
+          const achievementElement = document.createElement('div');
+          achievementElement.className = 'bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:border-green-100 transition-all achievement-item';
+          achievementElement.style.animationDelay = `${index * 0.1}s`;
+          
+          let categoryHTML = '';
+          if (entry.categories && entry.categories.length > 0) {
+            categoryHTML = `<span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">${entry.categories[0]}</span>`;
+          }
+          
+          achievementElement.innerHTML = `
+            <div class="flex justify-between items-center mb-2">
+              <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <h3 class="font-medium text-sm text-gray-600">${formattedDate}</h3>
+              </div>
+              ${categoryHTML}
+            </div>
+            
+            <div class="flex items-start space-x-3">
+              <div class="bg-green-500 rounded-full p-2 mt-1 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+              </div>
+              <div>
+                <p class="text-gray-800">${entry.goodEntry}</p>
+              </div>
+            </div>
+          `;
+          
+          achievementsContainer.appendChild(achievementElement);
+        });
+        
+        // Apply staggered animations
+        this.animateAchievements();
+      },
+      
+      // Update weekly summary in the Weekly Review tab
+      updateWeeklySummary() {
+        const weekEntries = this.getWeekEntries();
+        const goodEntriesCount = weekEntries.filter(entry => entry.goodEntry && entry.goodEntry.trim() !== '').length;
+        
+        // Update summary text
+        const weeklySummary = document.getElementById('weekly-summary');
+        weeklySummary.textContent = `You logged ${goodEntriesCount} positive moment${goodEntriesCount !== 1 ? 's' : ''} this week!`;
+        
+        // Update category breakdown
+        this.updateCategoryBreakdown(weekEntries);
+        
+        // Update achievements unlocked
+        this.updateAchievementsUnlocked(weekEntries);
+        
+        // Update challenges and insights
+        this.updateChallengesInsights(weekEntries);
+      },
+      
+      // Update category breakdown in the Weekly Review tab
+      updateCategoryBreakdown(weekEntries) {
+        const categoryBreakdown = document.getElementById('category-breakdown');
+        categoryBreakdown.innerHTML = '';
+        
+        // Count categories
+        const categoryCounts = {};
+        weekEntries.forEach(entry => {
+          if (entry.categories && entry.categories.length > 0) {
+            entry.categories.forEach(category => {
+              categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+            });
+          }
+        });
+        
+        // Sort categories by count
+        const sortedCategories = Object.keys(categoryCounts).sort((a, b) => categoryCounts[b] - categoryCounts[a]);
+        
+        if (sortedCategories.length === 0) {
+          categoryBreakdown.innerHTML = '<p class="text-gray-600 text-sm">No categories used this week.</p>';
+          return;
+        }
+        
+        // Calculate max count for percentage
+        const maxCount = Math.max(...Object.values(categoryCounts));
+        
+        // Create category bars with animation delays
+        sortedCategories.forEach((category, index) => {
+          const count = categoryCounts[category];
+          const percentage = Math.round((count / maxCount) * 100);
+          
+          const categoryElement = document.createElement('div');
+          categoryElement.className = 'flex items-center category-item';
+          categoryElement.style.animationDelay = `${index * 0.1}s`;
+          
+          categoryElement.innerHTML = `
+            <div class="w-24 text-sm text-gray-700">${category}</div>
+            <div class="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-green-500 transition-all duration-1000 ease-out" style="width: 0%"></div>
+            </div>
+            <div class="w-8 text-right text-sm text-gray-700">${count}</div>
+          `;
+          
+          categoryBreakdown.appendChild(categoryElement);
+          
+          // Animate the width after a short delay
+          setTimeout(() => {
+            const bar = categoryElement.querySelector('.bg-green-500');
+            bar.style.width = `${percentage}%`;
+          }, 100 + (index * 100));
+        });
+      },
+      
+      // Update achievements unlocked in the Weekly Review tab
+      updateAchievementsUnlocked(weekEntries) {
+        const achievementsUnlocked = document.getElementById('achievements-unlocked');
+        achievementsUnlocked.innerHTML = '';
+        
+        // Define achievements criteria
+        const achievements = [];
+        
+        // Count categories
+        const categoryCounts = {};
+        weekEntries.forEach(entry => {
+          if (entry.categories && entry.categories.length > 0) {
+            entry.categories.forEach(category => {
+              categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+            });
+          }
+        });
+        
+        // Social Butterfly achievement
+        if (categoryCounts['Social'] >= 2) {
+          achievements.push({
+            title: 'Social Butterfly',
+            description: 'Had 2 positive social interactions this week',
+            icon: '<circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>'
+          });
+        }
+        
+        // Work Win achievement
+        if (categoryCounts['Work'] >= 1) {
+          achievements.push({
+            title: 'Work Win',
+            description: 'Logged a major work accomplishment',
+            icon: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline>'
+          });
+        }
+        
+        // Consistency achievement
+        if (weekEntries.length >= 3) {
+          achievements.push({
+            title: 'Consistency Champion',
+            description: 'Logged entries on 3+ days this week',
+            icon: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>'
+          });
+        }
+        
+        if (achievements.length === 0) {
+          achievementsUnlocked.innerHTML = '<p class="text-gray-600 text-sm">No achievements unlocked yet this week.</p>';
+          return;
+        }
+        
+        // Create achievement elements with staggered animations
+        achievements.forEach((achievement, index) => {
+          const achievementElement = document.createElement('div');
+          achievementElement.className = 'flex items-center p-2 bg-gray-50 rounded border border-gray-100 staggered-item';
+          achievementElement.style.animationDelay = `${index * 0.15}s`;
+          
+          achievementElement.innerHTML = `
+            <div class="bg-green-500 p-2 rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${achievement.icon}</svg>
+            </div>
+            <div class="ml-3">
+              <div class="font-medium text-gray-800">${achievement.title}</div>
+              <div class="text-xs text-gray-600">${achievement.description}</div>
+            </div>
+          `;
+          
+          achievementsUnlocked.appendChild(achievementElement);
+        });
+      },
+      
+      // Update challenges and insights in the Weekly Review tab
+      updateChallengesInsights(weekEntries) {
+        const challengesInsights = document.getElementById('challenges-insights');
+        challengesInsights.innerHTML = '';
+        
+        // Count challenge categories
+        const challengeCategories = {};
+        weekEntries.forEach(entry => {
+          if (entry.challengeEntry && entry.challengeEntry.trim() !== '' && entry.categories && entry.categories.length > 0) {
+            entry.categories.forEach(category => {
+              challengeCategories[category] = (challengeCategories[category] || 0) + 1;
+            });
+          }
+        });
+        
+        // Sort categories by count
+        const sortedChallengeCategories = Object.keys(challengeCategories)
+          .sort((a, b) => challengeCategories[b] - challengeCategories[a])
+          .slice(0, 3); // Top 3 challenge categories
+        
+        if (sortedChallengeCategories.length === 0) {
+          challengesInsights.innerHTML = '<p class="text-gray-600 text-sm">No challenges recorded this week.</p>';
+          return;
+        }
+        
+        // Create insights based on challenge categories
+        const insights = {
+          'Social': 'Consider setting boundaries in your social interactions',
+          'Work': 'Try breaking down large tasks into smaller steps',
+          'Health': 'Try setting reminders for your health routines',
+          'Family': 'Schedule dedicated family time without distractions',
+          'Learning': 'Focus on one skill at a time to avoid overwhelm',
+          'Transit': 'Use transit time for podcasts or audiobooks'
+        };
+        
+        // Create challenge insight elements with staggered animations
+        sortedChallengeCategories.forEach((category, index) => {
+          const count = challengeCategories[category];
+          const insight = insights[category] || `Reflect on your ${category.toLowerCase()} challenges`;
+          
+          const insightElement = document.createElement('div');
+          insightElement.className = 'p-3 bg-gray-50 rounded border border-gray-100 staggered-item';
+          insightElement.style.animationDelay = `${index * 0.15}s`;
+          
+          insightElement.innerHTML = `
+            <div class="flex justify-between mb-1">
+              <span class="font-medium text-gray-800">${category} Challenges</span>
+              <span class="text-sm bg-red-50 text-red-700 px-2 rounded-full">${count}x</span>
+            </div>
+            <p class="text-sm text-gray-600">${insight}</p>
+          `;
+          
+          challengesInsights.appendChild(insightElement);
+        });
+      },
+      
+      // Show toast notification with enhanced animations
+      showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+        
+        // Set message and type
+        toastMessage.textContent = message;
+        toast.className = `toast ${type}`;
+        
+        // Show the toast
+        setTimeout(() => {
+          toast.classList.add('show');
+        }, 100);
+        
+        // Hide the toast after 3 seconds
+        setTimeout(() => {
+          toast.classList.remove('show');
+        }, 3000);
+      },
+      
+      // Initialize dark mode toggle
+      initDarkMode() {
+        const toggleSwitch = document.querySelector('#checkbox');
+        const switchLabel = document.querySelector('.switch-label');
+        
+        // Check for saved theme preference or use system preference
+        const currentTheme = localStorage.getItem('theme') || 
+                           (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        
+        // Set initial theme
+        if (currentTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+          toggleSwitch.checked = true;
+          switchLabel.textContent = 'Light Mode';
+        }
+        
+        // Toggle theme when switch is clicked
+        function switchTheme(e) {
+          if (e.target.checked) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+            switchLabel.textContent = 'Light Mode';
+          } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+            switchLabel.textContent = 'Dark Mode';
+          }
+        }
+        
+        toggleSwitch.addEventListener('change', switchTheme, false);
+      }
+    };
+    
+    // Add shake animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+      }
+      .animate-shake {
+        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Initialize the app when the DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      DailyBalanceApp.init();
+    });
+  </script>
+</body>
+</html>
